@@ -11,6 +11,12 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    /*
+        nem számit alabbol a metodusok sorrendje, de:
+        Helper metódusokat (mint az isTeacher/isStudent) általában a class vége felé szokás tenni.
+        A settings/properties (fillable, hidden, casts) maradjanak feljebb.
+        Ha role-t tömegesen akarod menteni (create/update), akkor érdemes a role mezőt hozzáadni a fillable tömbhöz is.
+     */
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -46,5 +52,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->role === 'teacher';
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
     }
 }
