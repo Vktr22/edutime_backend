@@ -13,6 +13,9 @@ Route::get('/debug-token', function (Request $request) {
 Route::middleware('auth:sanctum')->get('/test', function (Request $request) {
     $user = $request->user();
 
+    Route::middleware(['auth:sanctum', 'student']);
+    Route::middleware(['auth:sanctum', 'teacher']);
+    /*
     return response()->json([
         'message' => 'sanctum_auth_ok',
         'user' => [
@@ -22,6 +25,7 @@ Route::middleware('auth:sanctum')->get('/test', function (Request $request) {
             'role' => $user->role ?? null,
         ],
     ]);
+    */
 });
 
 
