@@ -35,7 +35,7 @@ class AuthController extends Controller{
         if (! $user) {
             return response()->json([
                 'message' => 'Invalid credentials',
-            ], 422);
+            ], 422);    //statuszkod beallitasa NEM MUSZAAJ de szebb (+ugy is meg kell majd jegyezni)
         }
 
         //ha a jelszo nem egyezik, akk is 422
@@ -44,13 +44,20 @@ class AuthController extends Controller{
         if (! \Illuminate\Support\Facades\Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials',
-            ], 422);
+            ], 422);    //statuszkod beallitasa
         }
+
+        //Bearer token generalasa
+        //createToken('api_token') ----> rekordot hoz letre a personal_access_tokens tablaba
+        // az 'api_token' csak egy nev, tetszoleges str lehet
+        //plainTextToken ----> visszaadjaa plain text tokent, amit el tudokkuldeni a frontendnek + a db-ben ennek a hash-e lesz eltarolva(nem a plain string) - mint fentebb
+        $token = $user->createToken('api_token')->plainTextToken;
 
         //json valasz
         return response()->json([
-            'message' => 'valid login',
+            'message' => 'login successful',
+            'token' => $token,
             'user'    => $user,
-        ]);
+        ], 200);    //statuszkod beallitasa
     }
 }
