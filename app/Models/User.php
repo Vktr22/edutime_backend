@@ -25,10 +25,19 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+
+    
+    /*
+        a role mezo is fillable lett mert:
+        mikor pl tinkerbe v seederrel uj rekord felvitelenel teacher-t allitottam be, atirta studentre,
+        mart ugye az az alap beallitott ertek!!!!
+     */
+
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
