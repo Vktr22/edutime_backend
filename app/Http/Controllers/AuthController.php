@@ -60,4 +60,15 @@ class AuthController extends Controller{
             'user'    => $user,
         ], 200);    //statuszkod beallitasa
     }
+
+    public function logout(Request $request){
+        //torli az access tokent
+        $request->user()
+            ?->currentAccessToken()
+            ?->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully',
+        ]);
+    }
 }
