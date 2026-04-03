@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         //ez a sor majd akk fog kelleni amint lesz bongeszos frontend (nem csak bearer apis token mint a thunder client)
-        $middleware->statefulApi();
+        //$middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
