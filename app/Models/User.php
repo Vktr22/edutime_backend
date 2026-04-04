@@ -72,4 +72,9 @@ class User extends Authenticatable
     {
         return $this->role === 'student';
     }
+
+    public function availabilities()
+    {
+        return $this->hasMany(\App\Models\TeacherAvailability::class, 'teacher_id');
+    }
 }
