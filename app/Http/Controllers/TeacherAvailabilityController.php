@@ -24,4 +24,46 @@ class TeacherAvailabilityController extends Controller
             ->orderBy('start_time')
             ->get();        //visszaadja a teljes listat json-kent
     }
+
+    
+    public function store(Request $request)
+    {
+        $teacherId = $request->user()->id;  //user azonositas
+
+        //helyes formatumot ell(ha hibas 422)
+        $validated = $request->validate([
+            'weekday'    => 'required|integer|min:1|max:7',
+            'start_time' => 'required|date_format:H:i',
+            'end_time'   => 'required|date_format:H:i|after:start_time',
+        ]);
+        
+        //menti de ugye a tid-t nem a user adja meg
+        $availability = TeacherAvailability::create([
+            'teacher_id' => $teacherId,
+            'weekday'    => $validated['weekday'],
+            'start_time' => $validated['start_time'],
+            'end_time'   => $validated['end_time'],
+        ]);
+        //sikeres mentes
+        return response()->json($availability, 201);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $teacherId = $request->user()->id;  //a torlendo availability rekord id-ja
+
+        //a tanar csak a sajat rekordjat torolheti (ha maset 404)
+        //vagyis NINCS unauthorized delete
+        $availability = TeacherAvailability::where('teacher_id', $teacherId)
+            ->where('id', $id)
+            ->firstOrFail();
+        //maga a torles
+        $availability->delete();
+        //frontendnek valasz
+        return response()->json([
+            'message' => 'Availability deleted successfully',
+        ]);
+    }
+
+
 }
