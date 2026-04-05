@@ -46,6 +46,24 @@ class TeacherAvailabilityController extends Controller
         ]);
         //sikeres mentes
         return response()->json($availability, 201);
+
+        // check overlapping ranges
+        //ez megakadalyozza, h uj idosav felvitele eseten ne legyen utkozes
+        $overlap = TeacherAvailability::where('teacher_id', $teacherId)
+            ->where('weekday', $validated['weekday'])
+            ->where(function ($query) use ($validated) {
+                $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
+                    ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']])
+                    ->orWhere(function ($sub) use ($validated) {
+                        $sub->where('start_time', '<=', $validated['start_time'])
+                            ->where('end_time', '>=', $validated['end_time']);
+                    });
+        })->exists();
+
+        if ($overlap) {
+            return response()->json(['message' => 'Ez az időszak ütközik egy már létező munkasávval.'], 409);
+        }
+
     }
 
     public function destroy(Request $request, $id)
