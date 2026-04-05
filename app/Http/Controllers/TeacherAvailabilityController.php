@@ -36,34 +36,49 @@ class TeacherAvailabilityController extends Controller
             'start_time' => 'required|date_format:H:i',
             'end_time'   => 'required|date_format:H:i|after:start_time',
         ]);
+
+        $day = $validated['weekday'];
+        $newStart = $validated['start_time'];
+        $newEnd = $validated['end_time'];
+
         
-        //menti de ugye a tid-t nem a user adja meg
+        // 1. Lekérjük az adott napi időszakokat
+        $existing = TeacherAvailability::where('teacher_id', $teacherId)
+            ->where('weekday', $day)
+            ->orderBy('start_time')
+            ->get();
+
+        
+        // 2. Megnézzük, hogy van-e átfedés
+        $mergedStart = $newStart;
+        $mergedEnd = $newEnd;
+        $overlaps = [];
+
+        foreach ($existing as $slot) {
+            if ($slot->end_time >= $newStart && $slot->start_time <= $newEnd) {
+                // Van átfedés → összevonjuk
+                $mergedStart = min($mergedStart, $slot->start_time);
+                $mergedEnd = max($mergedEnd, $slot->end_time);
+                $overlaps[] = $slot->id;
+            }
+        }
+
+        
+        // 3. Ha volt átfedés → töröljük a régieket
+        if (!empty($overlaps)) {
+            TeacherAvailability::whereIn('id', $overlaps)->delete();
+        }
+
+        
+        // 4. Mentjük az új (összevont) intervallumot
         $availability = TeacherAvailability::create([
             'teacher_id' => $teacherId,
-            'weekday'    => $validated['weekday'],
-            'start_time' => $validated['start_time'],
-            'end_time'   => $validated['end_time'],
+            'weekday'    => $day,
+            'start_time' => $mergedStart,
+            'end_time' => $mergedEnd,
         ]);
         //sikeres mentes
         return response()->json($availability, 201);
-
-        // check overlapping ranges
-        //ez megakadalyozza, h uj idosav felvitele eseten ne legyen utkozes
-        $overlap = TeacherAvailability::where('teacher_id', $teacherId)
-            ->where('weekday', $validated['weekday'])
-            ->where(function ($query) use ($validated) {
-                $query->whereBetween('start_time', [$validated['start_time'], $validated['end_time']])
-                    ->orWhereBetween('end_time', [$validated['start_time'], $validated['end_time']])
-                    ->orWhere(function ($sub) use ($validated) {
-                        $sub->where('start_time', '<=', $validated['start_time'])
-                            ->where('end_time', '>=', $validated['end_time']);
-                    });
-        })->exists();
-
-        if ($overlap) {
-            return response()->json(['message' => 'Ez az időszak ütközik egy már létező munkasávval.'], 409);
-        }
-
     }
 
     public function destroy(Request $request, $id)
