@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\TeacherAvailabilityController;
 
 /*
     autentikacios utvonalak
@@ -53,7 +54,11 @@ Route::middleware(['auth:sanctum', 'student'])->group(function () {
 Route::middleware(['auth:sanctum', 'teacher'])->group(function () {
 
     // Get teacher's own appointments
-    Route::get('/teacher/appointments', [AppointmentController::class, 'teacherIndex']);
+    Route::get('/teacher/appointments', [AppointmentController::class, 'teacherIndex']); 
+    Route::get('/teacher/availability', [TeacherAvailabilityController::class, 'index']);
+    Route::post('/teacher/availability', [TeacherAvailabilityController::class, 'store']);
+    Route::delete('/teacher/availability/{id}', [TeacherAvailabilityController::class, 'destroy']);
+
 });
 
 /*
