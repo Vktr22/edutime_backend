@@ -44,6 +44,10 @@ Route::middleware(['auth:sanctum', 'student'])->group(function () {
 
     // Get student's own appointments
     Route::get('/student/appointments', [AppointmentController::class, 'studentIndex']);
+
+    // NEW: teacher available timeslots
+    Route::get('/teachers/{id}/available-slots', [TeacherAvailabilityController::class, 'availableSlots']);
+
 });
 
 /*
