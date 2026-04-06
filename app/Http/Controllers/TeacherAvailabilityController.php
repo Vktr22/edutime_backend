@@ -6,6 +6,7 @@ use App\Models\TeacherAvailability;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Appointment;
+use Carbon\Carbon;
 
 class TeacherAvailabilityController extends Controller
 {
@@ -84,29 +85,79 @@ class TeacherAvailabilityController extends Controller
     }
 
     public function availableSlots($id){
-
-        // 1) Tanár létezik-e
+        // 1) Megnézzük, hogy létezik-e a tanár (és valóban teacher role-ja van-e)
         $teacher = User::where('role', 'teacher')->findOrFail($id);
 
-        // 2) Tanár availability lekérése
-        $availabilities = $teacher->availabilities()
-            ->orderBy('weekday')
-            ->orderBy('start_time')
-            ->get();
+        // 2) Lekérjük a tanár összes megadott elérhetőségi sávját
+        //    (pl. hétfő 08–12, kedd 14–17 stb.)
+        $availabilities = $teacher->availabilities()->get();
 
-        // 3) Already booked lesson_times
+        // 3) Lekérjük azokat az időpontokat, amelyekre már van foglalás
+        //    (csak a lesson_time mezőt kérjük le)
+        //    majd Carbon objektummá alakítjuk őket az összehasonlításhoz
         $booked = Appointment::where('teacher_id', $id)
             ->pluck('lesson_time')
+            ->map(fn($x) => Carbon::parse($x))
             ->toArray();
 
-        // 4) Slot length = 60 minutes
+        // 4) Egy tanóra hossza percben
+        //    (később ez könnyen paraméterezhető lenne)
         $slotLength = 60;
 
-        // 5) Ide jön majd a generálás
-        return response()->json([
-            'message' => 'available slots will be generated here'
-        ]);
+        // 5) Ebbe a tömbbe gyűjtjük majd a valóban foglalható időpontokat
+        $result = [];
+
+        // 6) 7 napra előre generáljuk az időpontokat
+        for ($i = 0; $i < 7; $i++) {
+
+            // 6.1) Az aktuálisan vizsgált dátum (ma + i nap)
+            $date = Carbon::now()->addDays($i);
+
+            // 6.2) A dátumhoz tartozó hét napja (1 = hétfő, 7 = vasárnap)
+            $weekday = $date->dayOfWeekIso;
+
+            // 6.3) Kiválasztjuk azokat az availability sávokat,
+            //      amelyek erre a hét napra vonatkoznak
+            $dayAvailabilities = $availabilities->where('weekday', $weekday);
+
+            // 7) Végigmegyünk az adott napi összes elérhetőségi sávon
+            foreach ($dayAvailabilities as $a) {
+
+                // 7.1) Az availability sávból (pl. 08–12)
+                //      legeneráljuk az órakezdési időpontokat (pl. 08:00, 09:00, 10:00)
+                $slots = $this->generateSlotsForDay(
+                    $weekday,
+                    $date->format('Y-m-d') . ' ' . $a->start_time,
+                    $date->format('Y-m-d') . ' ' . $a->end_time,
+                    $slotLength
+                );
+
+                // 8) Az így kapott slotokon végigmegyünk
+                foreach ($slots as $s) {
+
+                    // 8.1) A slot időpontját teljes dátum+idő formára alakítjuk
+                    $dt = Carbon::parse($s);
+
+                    // 8.2) Ellenőrizzük, hogy ez az időpont már foglalt-e
+                    //      (benne van-e a booked tömbben)
+                    $isBooked = in_array($dt, $booked);
+
+                    // 8.3) Csak akkor adjuk hozzá az eredményhez, ha:
+                    //      - nincs már lefoglalva
+                    //      - és a jövőben van (nem múltbeli időpont)
+                    if (!$isBooked && $dt->isFuture()) {
+                        $result[] = [
+                            'start' => $dt->format('Y-m-d H:i:s')
+                        ];
+                    }
+                }
+            }
+        }
+
+        // 9) Visszaadjuk a foglalható időpontokat JSON válaszként
+        return response()->json($result);
     }
+
 
     //ez a megadott idointervallumokbol 60perces kis slot-okat keszit
     private function generateSlotsForDay($weekday, $start, $end, $slotLength){
