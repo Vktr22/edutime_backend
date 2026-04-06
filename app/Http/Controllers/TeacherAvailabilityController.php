@@ -108,6 +108,21 @@ class TeacherAvailabilityController extends Controller
         ]);
     }
 
+    //ez a megadott idointervallumokbol 60perces kis slot-okat keszit
+    private function generateSlotsForDay($weekday, $start, $end, $slotLength){
+        $slots = [];
+        
+        $current = \Carbon\Carbon::parse($start);
+        $endTime = \Carbon\Carbon::parse($end);
+
+        while ($current->copy()->addMinutes($slotLength) <= $endTime) {
+            $slots[] = $current->format('H:i');
+            $current->addMinutes($slotLength);
+        }
+
+        return $slots;
+    }
+
     public function destroy(Request $request, $id)
     {
         $teacherId = $request->user()->id;  //a torlendo availability rekord id-ja
