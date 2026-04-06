@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\TeacherAvailability;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Appointment;
 
 class TeacherAvailabilityController extends Controller
 {
@@ -79,6 +81,31 @@ class TeacherAvailabilityController extends Controller
         ]);
         //sikeres mentes
         return response()->json($availability, 201);
+    }
+
+    public function availableSlots($id){
+
+        // 1) Tanár létezik-e
+        $teacher = User::where('role', 'teacher')->findOrFail($id);
+
+        // 2) Tanár availability lekérése
+        $availabilities = $teacher->availabilities()
+            ->orderBy('weekday')
+            ->orderBy('start_time')
+            ->get();
+
+        // 3) Already booked lesson_times
+        $booked = Appointment::where('teacher_id', $id)
+            ->pluck('lesson_time')
+            ->toArray();
+
+        // 4) Slot length = 60 minutes
+        $slotLength = 60;
+
+        // 5) Ide jön majd a generálás
+        return response()->json([
+            'message' => 'available slots will be generated here'
+        ]);
     }
 
     public function destroy(Request $request, $id)
