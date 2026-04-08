@@ -24,6 +24,8 @@ return new class extends Migration
                   ->onDelete('cascade');
 
             $table->dateTime('lesson_time');
+            // Az appointment aktuális állapota (active / cancelled_by_student / cancelled_by_teacher)
+            $table->string('status')->default('active');
 
             $table->timestamps();
 
