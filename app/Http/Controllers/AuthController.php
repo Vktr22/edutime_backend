@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller{
     
@@ -30,22 +31,20 @@ class AuthController extends Controller{
         //user mgtalalasa email alapjan
         $user = \App\Models\User::where('email', $validated['email'])->first();
 
-        //ha nincs user, 422 hibakoddal ter vissza
-        //422 hiba: a server ertette a kerest, de nem tudja elveg ervenytelen v hianyzo adatok miatt
+        // Hibás belépési adatok esetén egységes, biztonságos hibaüzenet (401)
         if (! $user) {
             return response()->json([
-                'message' => 'Invalid credentials',
-            ], 422);    //statuszkod beallitasa NEM MUSZAAJ de szebb (+ugy is meg kell majd jegyezni)
+                'message' => 'Hibás email cím vagy jelszó',
+            ], 401);
         }
 
-        //ha a jelszo nem egyezik, akk is 422
-        //Hash::check => osszehasonlitja a plaintext passw az ab hash-evel
-        //VISZONT itt ha rossz, biztonsagi okokbol nem lathato, h melyik
-        if (! \Illuminate\Support\Facades\Hash::check($validated['password'], $user->password)) {
+        
+        if (! Hash::check($validated['password'], $user->password)) {
             return response()->json([
-                'message' => 'Invalid credentials',
-            ], 422);    //statuszkod beallitasa
+                'message' => 'Hibás email cím vagy jelszó',
+            ], 401);
         }
+
 
         //Bearer token generalasa
         //createToken('api_token') ----> rekordot hoz letre a personal_access_tokens tablaba
