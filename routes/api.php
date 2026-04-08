@@ -65,6 +65,8 @@ Route::middleware(['auth:sanctum', 'teacher'])->group(function () {
     Route::get('/teacher/availability', [TeacherAvailabilityController::class, 'index']);
     Route::post('/teacher/availability', [TeacherAvailabilityController::class, 'store']);
     Route::delete('/teacher/availability/{id}', [TeacherAvailabilityController::class, 'destroy']);
+    // Tanár törölheti a saját jövőbeli foglalt időpontját
+    Route::delete('/teacher/appointments/{id}', [AppointmentController::class, 'teacherCancel']);
 
 });
 

@@ -60,7 +60,7 @@ class AppointmentController extends Controller
     public function studentCancel($id){
         $appointment = Appointment::findOrFail($id);
 
-        if ($appointment->student_id !== auth()->id()) {
+        if ($appointment->student_id !== Auth::id()) {
             abort(403);
         }
 
@@ -84,6 +84,31 @@ class AppointmentController extends Controller
         return Appointment::with('student:id,name,email')
             ->where('teacher_id', Auth::id())
             ->get();
+    }
+
+    // Tanár által kezdeményezett időponttörlés státuszváltással (nem fizikai törlés)
+    public function teacherCancel(int $id){
+        $appointment = Appointment::findOrFail($id);
+
+        // Ellenőrizzük, hogy az időpont valóban a bejelentkezett tanárhoz tartozik
+        if ($appointment->teacher_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Múltbeli időpontot nem lehet törölni
+        if ($appointment->lesson_time <= now()) {
+            return response()->json([
+                'message' => 'Múltbeli időpont nem törölhető'
+            ], 422);
+        }
+
+        // Az időpont státuszának módosítása tanári törlésre
+        $appointment->status = 'cancelled_by_teacher';
+        $appointment->save();
+
+        return response()->json([
+            'message' => 'Időpont sikeresen törölve'
+        ]);
     }
 
 
