@@ -48,6 +48,9 @@ Route::middleware(['auth:sanctum', 'student'])->group(function () {
     // NEW: teacher available timeslots
     Route::get('/teachers/{id}/available-slots', [TeacherAvailabilityController::class, 'availableSlots']);
 
+    // Diák törölheti a saját jövőbeni időpontját
+    Route::delete('/student/appointments/{id}', [AppointmentController::class, 'studentCancel']);
+
 });
 
 /*

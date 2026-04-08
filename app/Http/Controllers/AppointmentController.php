@@ -55,6 +55,28 @@ class AppointmentController extends Controller
             'lesson_time' => $request->lesson_time
         ]);
     }
+
+    // student - Diák által kezdeményezett időponttörlés (státuszváltással)
+    public function studentCancel($id){
+        $appointment = Appointment::findOrFail($id);
+
+        if ($appointment->student_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($appointment->lesson_time <= now()) {
+            return response()->json([
+                'message' => 'Múltbeli időpont nem törölhető'
+            ], 422);
+        }
+
+        $appointment->status = 'cancelled_by_student';
+        $appointment->save();
+
+        return response()->json([
+            'message' => 'Időpont sikeresen törölve'
+        ]);
+    }
         
     // Teacher – saját órái
     //terjen vissza listaban azokkal az idopontokkal azonnal, ahol a teachid = a bejelentkezett felhaszn id-javal, es betolti a tanuloid+name+email
