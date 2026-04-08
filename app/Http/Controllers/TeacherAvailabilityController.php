@@ -167,7 +167,8 @@ class TeacherAvailabilityController extends Controller
         $endTime = \Carbon\Carbon::parse($end);
 
         while ($current->copy()->addMinutes($slotLength) <= $endTime) {
-            $slots[] = $current->format('H:i');
+        // Teljes dátum+idő mentése, hogy a slot helyesen jövőbelinek számítson    
+        $slots[] = $current->format('Y-m-d H:i:s');
             $current->addMinutes($slotLength);
         }
 

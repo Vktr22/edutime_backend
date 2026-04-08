@@ -15,7 +15,8 @@ class AppointmentController extends Controller
         $id = Auth::id();   //az aktualisan bejelentkezettfel hasznalo id-jat adja vissza az auth::id(), amit mentjuk az $id- ba
             //terjen vissza azokkal az idopontokkal+adataival(tanarnak az id,name,email) (a with miatt azonnal), ahooool a student_id megegyezik a fenti $id ertekevel es listakent adja vissza ugye a get() miatt(collection)
         return Appointment::with('teacher:id,name,email')
-            ->where('student_id', $id)
+        ->where('student_id', Auth::id())
+        ->orderBy('lesson_time')    // Diák időpontjai időrendben, a megvalósulás dátuma szerint
             ->get();
     }
     
