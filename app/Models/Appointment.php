@@ -12,6 +12,7 @@ class Appointment extends Model
         'teacher_id',
         'student_id',
         'lesson_time',
+        'status',
     ];
 
     public function teacher()
