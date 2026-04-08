@@ -79,10 +79,11 @@ class AppointmentController extends Controller
     }
         
     // Teacher – saját órái
-    //terjen vissza listaban azokkal az idopontokkal azonnal, ahol a teachid = a bejelentkezett felhaszn id-javal, es betolti a tanuloid+name+email
+    // Tanár saját időpontjai státuszmezővel együtt, frontend döntési logikához
     public function teacherIndex(){
         return Appointment::with('student:id,name,email')
             ->where('teacher_id', Auth::id())
+            ->select('id', 'teacher_id', 'student_id', 'lesson_time', 'status')
             ->get();
     }
 
