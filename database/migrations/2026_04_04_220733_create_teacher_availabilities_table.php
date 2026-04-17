@@ -12,10 +12,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
 
-            // 1 = Monday  7= Sunday
+            
             $table->unsignedTinyInteger('weekday');
 
-            $table->time('start_time');
+            $table->time('start_time'); //csak napon belluli ido ami nem eleg!!
             $table->time('end_time');
 
             $table->timestamps();

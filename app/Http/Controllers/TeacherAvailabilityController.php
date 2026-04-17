@@ -57,6 +57,7 @@ class TeacherAvailabilityController extends Controller
         $mergedEnd = $newEnd;
         $overlaps = [];
 
+        // Az átfedő időszakok összegyűjtése-----------------------------------------------------------
         foreach ($existing as $slot) {
             if ($slot->end_time >= $newStart && $slot->start_time <= $newEnd) {
                 // Van átfedés → összevonjuk
