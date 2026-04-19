@@ -6,28 +6,40 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
-    
+
     // Student – saját időpontok
-    public function studentIndex(){
+    public function studentIndex()
+    {
         $id = Auth::id();   //az aktualisan bejelentkezettfel hasznalo id-jat adja vissza az auth::id(), amit mentjuk az $id- ba
-            //terjen vissza azokkal az idopontokkal+adataival(tanarnak az id,name,email) (a with miatt azonnal), ahooool a student_id megegyezik a fenti $id ertekevel es listakent adja vissza ugye a get() miatt(collection)
+        //terjen vissza azokkal az idopontokkal+adataival(tanarnak az id,name,email) (a with miatt azonnal), ahooool a student_id megegyezik a fenti $id ertekevel es listakent adja vissza ugye a get() miatt(collection)
         return Appointment::with('teacher:id,name,email')
-        ->where('student_id', Auth::id())
-        ->orderBy('lesson_time')    // Diák időpontjai időrendben, a megvalósulás dátuma szerint
+            ->where('student_id', Auth::id())
+            ->orderBy('lesson_time')    // Diák időpontjai időrendben, a megvalósulás dátuma szerint
             ->get();
     }
-    
+
     // Student – foglalás
-    public function studentBook(Request $request, $teacher_id){
-        
+    public function studentBook(Request $request, $teacher_id)
+    {
+
         //ez megnézi, h a diak altal foglalni keszulo idopont formailag valid e
         //required --kotelezokitolteni date--valodi datum kell, after:now --- mindenképpen a most után, vagyis csak jovobeni idopontoot lehet
         $request->validate([
-            'lesson_time' => 'required|date|after:now'
+            'lesson_time' => 'required|date'
         ]);
+        //a config('app.timezone') garantálja, hogy ugyanabban a zónában értelmezzük a stringet
+        $lessonTime = Carbon::parse($request->lesson_time, config('app.timezone'));
+
+        //a lessThanOrEqualTo(now()) pontosan lefedi: ha már elkezdődött (vagy pont most kezdődik), tiltás
+        if (!$lessonTime->lessThanOrEqualTo(now())) {
+            return response()->json([
+                'message' => 'Már elkezdődött időpontra nem lehet foglalni.'
+            ], 422);
+        }
 
         //visszaadja az adott bejelentkezett felhasznalot(sanct token alapjan) és ez fontos h itt legyen mert:
         /*
@@ -58,7 +70,8 @@ class AppointmentController extends Controller
     }
 
     // student - Diák által kezdeményezett időponttörlés (státuszváltással)
-    public function studentCancel($id){
+    public function studentCancel($id)
+    {
         $appointment = Appointment::findOrFail($id);
 
         if ($appointment->student_id !== Auth::id()) {
@@ -78,10 +91,11 @@ class AppointmentController extends Controller
             'message' => 'Időpont sikeresen törölve'
         ]);
     }
-        
+
     // Teacher – saját órái
     // Tanár saját időpontjai státuszmezővel együtt, frontend döntési logikához
-    public function teacherIndex(){
+    public function teacherIndex()
+    {
         return Appointment::with('student:id,name,email')
             ->where('teacher_id', Auth::id())
             ->select('id', 'teacher_id', 'student_id', 'lesson_time', 'status')
@@ -89,7 +103,8 @@ class AppointmentController extends Controller
     }
 
     // Tanár által kezdeményezett időponttörlés státuszváltással (nem fizikai törlés)
-    public function teacherCancel(int $id){
+    public function teacherCancel(int $id)
+    {
         $appointment = Appointment::findOrFail($id);
 
         // Ellenőrizzük, hogy az időpont valóban a bejelentkezett tanárhoz tartozik
@@ -112,7 +127,4 @@ class AppointmentController extends Controller
             'message' => 'Időpont sikeresen törölve'
         ]);
     }
-
-
-
 }
