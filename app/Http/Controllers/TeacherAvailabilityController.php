@@ -118,16 +118,32 @@ class TeacherAvailabilityController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        $teacherId = $request->user()->id;  //a torlendo availability rekord id-ja
+        $teacherId = $request->user()->id;
 
-        //a tanar csak a sajat rekordjat torolheti (ha maset 404)
-        //vagyis NINCS unauthorized delete
         $availability = TeacherDateAvailability::where('teacher_id', $teacherId)
             ->where('id', $id)
             ->firstOrFail();
-        //maga a torles
+
+        // Availability sáv kezdete/vége dátumidőként
+        $start = Carbon::parse("{$availability->date} {$availability->start_time}");
+        $end   = Carbon::parse("{$availability->date} {$availability->end_time}");
+
+        // Van-e aktív foglalás, ami ebbe a sávba esik?
+        // (end-et exclusive-ként kezeljük)
+        $hasActiveBooking = Appointment::where('teacher_id', $teacherId)
+            ->where('status', 'active')
+            ->where('lesson_time', '>=', $start->format('Y-m-d H:i:s'))
+            ->where('lesson_time', '<',  $end->format('Y-m-d H:i:s'))
+            ->exists();
+
+        if ($hasActiveBooking) {
+            return response()->json([
+                'message' => 'Nem törölhető ez az elérhetőség, mert van rá foglalt időpont.'
+            ], 422);
+        }
+
         $availability->delete();
-        //frontendnek valasz
+
         return response()->json([
             'message' => 'Availability deleted successfully',
         ]);
