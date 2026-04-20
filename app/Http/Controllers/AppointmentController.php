@@ -55,6 +55,7 @@ class AppointmentController extends Controller
 
         $exists = Appointment::where('teacher_id', $teacher_id)
             ->where('lesson_time', $request->lesson_time)
+            ->where('status', 'active')
             ->exists();
 
         if ($exists) {
@@ -64,7 +65,8 @@ class AppointmentController extends Controller
         return Appointment::create([
             'teacher_id' => $teacher_id,
             'student_id' => $student->id,
-            'lesson_time' => $request->lesson_time
+            'lesson_time' => $request->lesson_time,
+            'status' => 'active',
         ]);
     }
 
