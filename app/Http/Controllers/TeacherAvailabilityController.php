@@ -84,6 +84,7 @@ class TeacherAvailabilityController extends Controller
         //    (csak a lesson_time mezőt kérjük le)
         //    majd Carbon objektummá alakítjuk őket az összehasonlításhoz
         $booked = Appointment::where('teacher_id', $id)
+            ->where('status', 'active')
             ->pluck('lesson_time')
             ->map(fn($x) => Carbon::parse($x)->format('Y-m-d H:i'))
             ->toArray();
