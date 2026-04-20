@@ -31,11 +31,14 @@ class AppointmentController extends Controller
         $request->validate([
             'lesson_time' => 'required|date'
         ]);
-        //a config('app.timezone') garantálja, hogy ugyanabban a zónában értelmezzük a stringet
-        $lessonTime = Carbon::parse($request->lesson_time, config('app.timezone'));
 
-        //a lessThanOrEqualTo(now()) pontosan lefedi: ha már elkezdődött (vagy pont most kezdődik), tiltás
-        if (!$lessonTime->lessThanOrEqualTo(now())) {
+        $lessonTime = Carbon::createFromFormat(
+            'Y-m-d H:i:s',
+            $request->lesson_time,
+            'Europe/Budapest'
+        );
+
+        if ($lessonTime->lessThanOrEqualTo(Carbon::now('Europe/Budapest'))) {
             return response()->json([
                 'message' => 'Már elkezdődött időpontra nem lehet foglalni.'
             ], 422);
@@ -48,20 +51,16 @@ class AppointmentController extends Controller
         */
         $student = $request->user();
 
-        //letezike az a tech akihez akar foglalni
-        $teacher = User::where('role', 'teacher')->findOrFail($teacher_id);
+        User::where('role', 'teacher')->findOrFail($teacher_id);
 
-        //foglalt e mar ez az idopont--> ua a teach ua-ban az idopontban van e mar foglalva
         $exists = Appointment::where('teacher_id', $teacher_id)
             ->where('lesson_time', $request->lesson_time)
             ->exists();
-        //ha foglalt ez az uzi
+
         if ($exists) {
             return response()->json(['message' => 'Az időpont már foglalt'], 409);
         }
 
-        //ha minden okes, akk menti az idopontot
-        //vagyis uj sor az appointments tablaba , json-ban visszakuldi 
         return Appointment::create([
             'teacher_id' => $teacher_id,
             'student_id' => $student->id,
