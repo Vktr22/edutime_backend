@@ -62,6 +62,20 @@ class AppointmentController extends Controller
             return response()->json(['message' => 'Az időpont már foglalt'], 409);
         }
 
+
+        //Controller validáció: diák időütközés tiltása
+        $studentHasClash = Appointment::where('student_id', $student->id)
+            ->where('lesson_time', $request->lesson_time)
+            ->where('status', 'active')
+            ->exists();
+
+        if ($studentHasClash) {
+            return response()->json([
+                'message' => 'Már van foglalásod erre az időpontra.'
+            ], 409);
+        }
+
+
         return Appointment::create([
             'teacher_id' => $teacher_id,
             'student_id' => $student->id,
