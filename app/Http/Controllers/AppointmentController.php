@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use App\Models\Appointment;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use PhpParser\Node\Stmt\TryCatch;
 
 class AppointmentController extends Controller
 {
@@ -27,9 +29,9 @@ class AppointmentController extends Controller
     {
 
         //ez megnézi, h a diak altal foglalni keszulo idopont formailag valid e
-        //required --kotelezokitolteni date--valodi datum kell, after:now --- mindenképpen a most után, vagyis csak jovobeni idopontoot lehet
+        //Ezzel kizárjuk, hogy valahonnan ISO/UTC (...Z) csússzon be és eltolja az időt. UI nem változik, csak kevesebb “rejtett rossz adat” kerül be.
         $request->validate([
-            'lesson_time' => 'required|date'
+            'lesson_time' => 'required|date_format:Y-m-d H:i:s'
         ]);
 
         $lessonTime = Carbon::createFromFormat(
@@ -37,6 +39,9 @@ class AppointmentController extends Controller
             $request->lesson_time,
             'Europe/Budapest'
         );
+
+        // KEREKÍTÉS / NORMALIZÁLÁS (ha valaha másodperc eltérés jönne)
+        $lessonTimeStr = $lessonTime->format('Y-m-d H:i:s');
 
         if ($lessonTime->lessThanOrEqualTo(Carbon::now('Europe/Budapest'))) {
             return response()->json([
@@ -54,7 +59,7 @@ class AppointmentController extends Controller
         User::where('role', 'teacher')->findOrFail($teacher_id);
 
         $exists = Appointment::where('teacher_id', $teacher_id)
-            ->where('lesson_time', $request->lesson_time)
+            ->where('lesson_time', $lessonTimeStr)
             ->where('status', 'active')
             ->exists();
 
@@ -65,7 +70,7 @@ class AppointmentController extends Controller
 
         //Controller validáció: diák időütközés tiltása
         $studentHasClash = Appointment::where('student_id', $student->id)
-            ->where('lesson_time', $request->lesson_time)
+            ->where('lesson_time', $lessonTimeStr)
             ->where('status', 'active')
             ->exists();
 
@@ -75,13 +80,22 @@ class AppointmentController extends Controller
             ], 409);
         }
 
-
-        return Appointment::create([
-            'teacher_id' => $teacher_id,
-            'student_id' => $student->id,
-            'lesson_time' => $request->lesson_time,
-            'status' => 'active',
-        ]);
+        try {
+            return Appointment::create([
+                'teacher_id' => $teacher_id,
+                'student_id' => $student->id,
+                'lesson_time' => $lessonTimeStr,
+                'status' => 'active',
+            ]);
+        } catch (QueryException $e) {
+            // MySQL/MariaDB unique constraint violation: SQLSTATE 23000
+            if (($e->errorInfo[0] ?? null) === '23000') {
+                return response()->json([
+                    'message' => 'Már van aktív foglalásod erre az időpontra.'
+                ], 409);
+            }
+            throw $e;
+        }
     }
 
     // student - Diák által kezdeményezett időponttörlés (státuszváltással)

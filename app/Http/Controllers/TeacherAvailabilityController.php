@@ -86,17 +86,14 @@ class TeacherAvailabilityController extends Controller
         $booked = Appointment::where('teacher_id', $id)
             ->where('status', 'active')
             ->pluck('lesson_time')
-            ->map(fn($x) => Carbon::parse($x)->format('Y-m-d H:i'))
+            ->map(fn($x) => Carbon::parse($x, 'Europe/Budapest')->format('Y-m-d H:i'))
             ->toArray();
-
-        // 5) Ebbe a tömbbe gyűjtjük majd a valóban foglalható időpontokat
-        $result = [];
 
 
         // Az elérhetőségi sávokból 60 perces, még szabad és jövőbeli időpontokat gyűjtünk.
         foreach ($availabilities as $a) {
-            $start = Carbon::parse("{$a->date} {$a->start_time}");
-            $end   = Carbon::parse("{$a->date} {$a->end_time}");
+            $start = Carbon::parse("{$a->date} {$a->start_time}", 'Europe/Budapest');
+            $end   = Carbon::parse("{$a->date} {$a->end_time}", 'Europe/Budapest');
 
             while ($start->copy()->addMinutes(60) <= $end) {
                 if (

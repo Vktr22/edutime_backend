@@ -7,13 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 
 class Appointment extends Model
 {
-    
+    use HasFactory;
+
     protected $fillable = [
         'teacher_id',
         'student_id',
+        'active_student_id',   // <-- ADD
         'lesson_time',
         'status',
     ];
+
+
+    protected $casts = [
+        'lesson_time' => 'datetime',
+    ];
+
+
+    protected static function booted(): void
+    {
+        // Mindig konzisztensen tartjuk az active_student_id-t
+        static::saving(function (Appointment $appointment) {
+            $appointment->active_student_id =
+                ($appointment->status === 'active')
+                ? $appointment->student_id
+                : null;
+        });
+    }
+
+
 
     public function teacher()
     {
@@ -24,5 +45,4 @@ class Appointment extends Model
     {
         return $this->belongsTo(User::class, 'student_id');
     }
-
 }

@@ -7,19 +7,23 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    
+
     public function up(): void
+
     {
-        // generated column: MariaDB-ben ezt biztosan SQL-lel
+        Schema::table('appointments', function (Blueprint $table) {
+            $table->unsignedBigInteger('active_student_id')->nullable()->after('student_id');
+        });
+
+        // Backfill a meglévő adatokra is (migrate:fresh+seed és régi DB esetén is ok)
         DB::statement("
-            ALTER TABLE appointments
-            ADD COLUMN active_student_id BIGINT UNSIGNED
-            GENERATED ALWAYS AS (
-                CASE WHEN status = 'active' THEN student_id ELSE NULL END
-            ) STORED
+            UPDATE appointments
+            SET active_student_id = CASE
+                WHEN status = 'active' THEN student_id
+                ELSE NULL
+            END
         ");
 
-        // index már mehet Laravelrel
         Schema::table('appointments', function (Blueprint $table) {
             $table->unique(
                 ['active_student_id', 'lesson_time'],
@@ -28,13 +32,13 @@ return new class extends Migration
         });
     }
 
-    
+
+
     public function down(): void
     {
         Schema::table('appointments', function (Blueprint $table) {
             $table->dropUnique('appointments_active_student_lesson_time_unique');
+            $table->dropColumn('active_student_id');
         });
-
-        DB::statement("ALTER TABLE appointments DROP COLUMN active_student_id");
     }
 };
