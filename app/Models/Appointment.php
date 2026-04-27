@@ -19,7 +19,7 @@ class Appointment extends Model
 
 
     protected $casts = [
-        'lesson_time' => 'datetime',
+        'lesson_time' => 'datetime:Y-m-d H:i:s',
     ];
 
 
