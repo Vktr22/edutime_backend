@@ -81,12 +81,15 @@ class AppointmentController extends Controller
         }
 
         try {
-            return Appointment::create([
-                'teacher_id' => $teacher_id,
-                'student_id' => $student->id,
+
+            $appt = Appointment::create([
+                'teacher_id'  => $teacher_id,
+                'student_id'  => $student->id,
                 'lesson_time' => $lessonTimeStr,
-                'status' => 'active',
+                'status'      => 'active',
             ]);
+
+            return response()->json($appt, 200);
         } catch (QueryException $e) {
             // MySQL/MariaDB unique constraint violation: SQLSTATE 23000
             if (($e->errorInfo[0] ?? null) === '23000') {
