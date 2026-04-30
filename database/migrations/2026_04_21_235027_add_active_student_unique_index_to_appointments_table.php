@@ -15,7 +15,6 @@ return new class extends Migration
             $table->unsignedBigInteger('active_student_id')->nullable()->after('student_id');
         });
 
-        // Backfill a meglévő adatokra is (migrate:fresh+seed és régi DB esetén is ok)
         DB::statement("
             UPDATE appointments
             SET active_student_id = CASE

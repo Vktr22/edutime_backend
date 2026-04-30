@@ -25,7 +25,6 @@ class Appointment extends Model
 
     protected static function booted(): void
     {
-        // Mindig konzisztensen tartjuk az active_student_id-t
         static::saving(function (Appointment $appointment) {
             $appointment->active_student_id =
                 ($appointment->status === 'active')

@@ -12,20 +12,18 @@ return new class extends Migration
             $table->id();
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
 
-            
+
             $table->unsignedTinyInteger('weekday');
 
-            $table->time('start_time'); //csak napon belluli ido ami nem eleg!!
+            $table->time('start_time');
             $table->time('end_time');
 
             $table->timestamps();
 
-            // optional: prevent exact duplicates
             $table->unique(
                 ['teacher_id', 'weekday', 'start_time', 'end_time'],
                 'teacher_avail_unique'
             );
-
         });
     }
 

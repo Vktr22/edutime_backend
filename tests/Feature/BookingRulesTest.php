@@ -32,9 +32,8 @@ class BookingRulesTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
         $teacher = User::factory()->create(['role' => 'teacher']);
 
-        $time = Carbon::now('Europe/Budapest')->addDays(2)->setTime(10,0)->format('Y-m-d H:i:s');
+        $time = Carbon::now('Europe/Budapest')->addDays(2)->setTime(10, 0)->format('Y-m-d H:i:s');
 
-        // már foglalt a tanárnál
         Appointment::create([
             'teacher_id' => $teacher->id,
             'student_id' => $student->id,
@@ -47,7 +46,7 @@ class BookingRulesTest extends TestCase
         $this->postJson("/api/teachers/{$teacher->id}/appointments", [
             'lesson_time' => $time,
         ])->assertStatus(409)
-          ->assertJsonFragment(['message' => 'Az időpont már foglalt']);
+            ->assertJsonFragment(['message' => 'Az időpont már foglalt']);
     }
 
     public function test_student_time_conflict_409(): void
@@ -56,7 +55,7 @@ class BookingRulesTest extends TestCase
         $teacher1 = User::factory()->create(['role' => 'teacher']);
         $teacher2 = User::factory()->create(['role' => 'teacher']);
 
-        $time = Carbon::now('Europe/Budapest')->addDays(2)->setTime(11,0)->format('Y-m-d H:i:s');
+        $time = Carbon::now('Europe/Budapest')->addDays(2)->setTime(11, 0)->format('Y-m-d H:i:s');
 
         Appointment::create([
             'teacher_id' => $teacher1->id,
@@ -70,7 +69,7 @@ class BookingRulesTest extends TestCase
         $this->postJson("/api/teachers/{$teacher2->id}/appointments", [
             'lesson_time' => $time,
         ])->assertStatus(409)
-          ->assertJsonFragment(['message' => 'Már van foglalásod erre az időpontra.']);
+            ->assertJsonFragment(['message' => 'Már van foglalásod erre az időpontra.']);
     }
 
     public function test_student_can_book_future_time_200(): void
@@ -80,11 +79,11 @@ class BookingRulesTest extends TestCase
 
         Sanctum::actingAs($student);
 
-        $time = Carbon::now('Europe/Budapest')->addDays(3)->setTime(12,0)->format('Y-m-d H:i:s');
+        $time = Carbon::now('Europe/Budapest')->addDays(3)->setTime(12, 0)->format('Y-m-d H:i:s');
 
         $this->postJson("/api/teachers/{$teacher->id}/appointments", [
             'lesson_time' => $time,
         ])->assertStatus(200)
-          ->assertJsonFragment(['status' => 'active']);
+            ->assertJsonFragment(['status' => 'active']);
     }
 }

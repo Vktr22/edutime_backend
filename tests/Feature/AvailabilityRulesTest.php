@@ -33,7 +33,7 @@ class AvailabilityRulesTest extends TestCase
             'start_time' => '08:00',
             'end_time' => '12:00',
         ])->assertStatus(422)
-          ->assertJsonFragment(['message' => 'Ez az időpont már létezik.']);
+            ->assertJsonFragment(['message' => 'Ez az időpont már létezik.']);
     }
 
     public function test_teacher_cannot_delete_availability_with_active_booking_422(): void
@@ -51,11 +51,10 @@ class AvailabilityRulesTest extends TestCase
             'end_time' => '12:00:00',
         ]);
 
-        // Foglalás beleesik 10:00-ra
         Appointment::create([
             'teacher_id' => $teacher->id,
             'student_id' => $student->id,
-            'lesson_time' => $date.' 10:00:00',
+            'lesson_time' => $date . ' 10:00:00',
             'status' => 'active',
         ]);
 
